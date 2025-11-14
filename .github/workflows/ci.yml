@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:24-dind
+        options: --privileged
+        ports:
+          - 2375:2375
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache node modules web
+        uses: actions/cache@v4
+        with:
+          path: apps/web/node_modules
+          key: ${{ runner.os }}-web-${{ hashFiles('apps/web/package-lock.json') }}
+
+      - name: Cache node modules api
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules
+          key: ${{ runner.os }}-api-${{ hashFiles('apps/api/package-lock.json') }}
+
+      - name: Install deps (web)
+        run: cd apps/web && npm ci
+
+      - name: Install deps (api)
+        run: cd apps/api && npm ci
+
+      - name: Run unit tests (api)
+        run: cd apps/api && npm test
+
+      - name: Run unit tests (web)
+        run: cd apps/web && npm test --if-present
+
+      - name: Build web
+        run: cd apps/web && npm run build
+
+      - name: Deploy to Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apps/web/dist
+          publish_branch: gh-pages
+
+
+      - name: Build & start docker-compose for E2E
+        run: |
+          docker-compose -f docker-compose.yml up -d --build
+          # wait for services to be healthy (na prática, fazer um wait loop)
+          sleep 5
+
+      - name: Run Playwright tests
+        run: |
+          cd apps/web
+          npx playwright test --reporter=dot
+        env:
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload artifacts (web dist)
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+
+      - name: LHCI (opcional)
+        if: always()
+        run: |
+          cd apps/web
+          npx @lhci/cli autorun || true

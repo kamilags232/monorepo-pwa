@@ -1,0 +1,11 @@
+
+> bootcamp-api@1.0.0 start
+> node index.js
+
+✅ API rodando na porta 3000
+
+> bootcamp-api@1.0.0 start
+> node index.js
+
+✅ API rodando em http://localhost:3000
+/c/Program Files/nodejs/npm: line 65:  2834 Hangup                  "$NODE_EXE" "$NPM_CLI_JS" "$@"
