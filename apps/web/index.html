@@ -1,13 +1,194 @@
-<!doctype html>
-<html lang="en">
-  <head>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bootcamp PWA</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#6a0dad" />
+
+    <title>Focus-Blocker</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #2d0055, #0a0014 70%);
+            color: #e3d7ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(130, 0, 220, 0.4);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 0 20px #6a0dad50;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #c499ff;
+            text-shadow: 0 0 10px #8f39ff;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 25px;
+        }
+
+        img.logo {
+            width: 120px;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 8px #9f4dff);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #btnInstall {
+            background: #7821e2;
+            color: white;
+            box-shadow: 0 0 10px #a55cff;
+        }
+
+        #btnInstall:hover {
+            background: #8f3aff;
+            box-shadow: 0 0 14px #b27cff;
+        }
+
+        #btnDownloadExt {
+            background: transparent;
+            border: 2px solid #a55cff;
+            color: #d9b8ff;
+        }
+
+        #btnDownloadExt:hover {
+            background: #a55cff20;
+            box-shadow: 0 0 10px #a55cff;
+        }
+
+        .description {
+            margin-top: 35px;
+            text-align: left;
+            color: #e7d9ff;
+            line-height: 1.6;
+        }
+
+        .description h2 {
+            font-size: 1.3rem;
+            color: #c48bff;
+            text-shadow: 0 0 8px #9f4dff;
+            margin-bottom: 10px;
+        }
+
+        .description h3 {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #d4a6ff;
+            text-shadow: 0 0 6px #8f39ff;
+        }
+
+        .description ul {
+            margin: 10px 0 10px 20px;
+        }
+
+        .description li {
+            margin-bottom: 6px;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div class="card">
+        <img src="icons/icon-192.png" alt="Fênix Roxa" class="logo">
+
+        <h1 class="title">Focus-Blocker</h1>
+        <p class="subtitle">Controle sua produtividade com estilo.<br>
+        Bloqueie distrações com a energia da Fênix Roxa.</p>
+
+        <button id="btnInstall">Instalar PWA</button>
+        <button id="btnDownloadExt">Baixar Extensão</button>
+
+        <div class="description">
+            <h2>O que é o Focus-Blocker?</h2>
+            <p>
+                O <strong>Focus-Blocker</strong> é uma extensão criada para quem precisa manter o foco,
+                eliminar distrações e aumentar sua produtividade.  
+                Ele bloqueia sites, aplicativos e notificações que tiram sua atenção, permitindo que
+                você entre no verdadeiro <em>modo concentração</em>.
+            </p>
+
+            <h3>✨ Principais recursos</h3>
+            <ul>
+                <li>Bloqueio de sites distrativos</li>
+                <li>Timer de foco integrado</li>
+                <li>Lista personalizada de bloqueios</li>
+                <li>Interface rápida e intuitiva</li>
+                <li>Mascote oficial: a Fênix Roxa 🔥🟣</li>
+            </ul>
+
+            <p>
+                Perfeito para estudos, trabalho, criação de conteúdo e qualquer tarefa que exija foco profundo.
+            </p>
+        </div>
+    </div>
+
+    <!-- SCRIPT INSTALL PWA -->
+    <script src="install.js"></script>
+
+    <!-- SCRIPT DOWNLOAD EXTENSÃO -->
+    <script>
+        const webstoreLink = "https://chrome.google.com/webstore/detail/ID_DA_EXTENSAO";
+        const zipLink = "phoenix-lock-v1.0.0.zip";
+
+        document.getElementById("btnDownloadExt").addEventListener("click", () => {
+            if (webstoreLink.includes("ID_DA_EXTENSAO")) {
+                window.location.href = zipLink; 
+            } else {
+                window.location.href = webstoreLink;
+            }
+        });
+    </script>
+
+    <!-- SERVICE WORKER (correto e sem duplicar) -->
+    <script>
+        if ("serviceWorker" in navigator) 
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then(() => console.log("SW registrado"))
+      .catch(err => console.error("Erro ao registrar SW", err));
+  });
+    </script>
+
+</body>
 </html>

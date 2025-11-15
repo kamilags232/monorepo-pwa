@@ -1,0 +1,71 @@
+/* Tema Futurista Dark Neon */
+
+:root {
+  --bg: #0d0d16;
+  --bg-card: #141426;
+  --text: #d8d8e7;
+  --accent: #8257e6;
+  --accent-glow: rgba(130, 87, 230, 0.7);
+  --cyan: #00eaff;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 2.2rem;
+  background: linear-gradient(90deg, var(--cyan), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.container {
+  width: 90%;
+  margin: auto;
+  margin-top: 30px;
+}
+
+/* Card futurista com glow */
+.card {
+  background: var(--bg-card);
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  border: 1px solid #24243a;
+  box-shadow: 0 0 14px rgba(130, 87, 230, 0.15);
+  transition: 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: translateY(-3px);
+}
+
+/* Botão de instalação Futurista */
+.install-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 14px 20px;
+  font-size: 18px;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: none;
+  box-shadow: 0 0 14px var(--accent);
+  transition: 0.25s;
+}
+
+.install-btn:hover {
+  box-shadow: 0 0 20px var(--cyan);
+  transform: scale(1.05);
+}

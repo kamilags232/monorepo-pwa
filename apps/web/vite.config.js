@@ -1,7 +1,18 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-})
+  server: {
+    // Obrigatório para o service worker conseguir controlar a raiz "/"
+    headers: {
+      "Service-Worker-Allowed": "/"
+    }
+  },
+
+  build: {
+    // Garante que o manifest seja gerado corretamente no build
+    manifest: true
+  },
+
+  // Serve arquivos da pasta public/ corretamente
+  publicDir: "public",
+});
