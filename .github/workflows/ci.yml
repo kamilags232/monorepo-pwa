@@ -1,108 +1,48 @@
-name: CI
+name: Deploy PWA to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # ----------------------------------
-      # CHECKOUT
-      # ----------------------------------
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # ----------------------------------
-      # NODE SETUP
-      # ----------------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      # ----------------------------------
-      # INSTALL DEPENDENCIES
-      # ----------------------------------
-      - name: Install deps (web)
-        run: cd apps/web && npm ci
+      - name: Install Monorepo Dependencies
+        run: npm ci --workspaces
 
-      - name: Install deps (api)
-        run: cd apps/api && npm ci
+      - name: Build PWA
+        run: npm run build -w apps/pwa
 
-      # ----------------------------------
-      # UNIT TESTS
-      # ----------------------------------
-      - name: Run unit tests (api)
-        run: cd apps/api && npm test
+      - name: Disable Jekyll
+        run: echo "" > apps/pwa/dist/.nojekyll
 
-      - name: Run unit tests (web)
-        run: cd apps/web && npm test --if-present
-
-      # ----------------------------------
-      # BUILD FRONTEND
-      # ----------------------------------
-      - name: Build web
-        run: cd apps/web && npm run build
-
-      # Disable Jekyll (fix Pages error)
-      - name: Add .nojekyll
-        run: cd apps/web/dist && touch .nojekyll
-
-      # ----------------------------------
-      # DEPLOY TO GITHUB PAGES
-      # ----------------------------------
-      - name: Deploy to GH Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apps/web/dist
-          publish_branch: gh-pages
+          path: apps/pwa/dist
 
-      # ----------------------------------
-      # PREVIEW SERVER FOR PLAYWRIGHT
-      # ----------------------------------
-      - name: Start Preview Server
-        run: |
-          cd apps/web
-          npm install -g serve
-          serve -s dist -l 4173 &
-          sleep 5
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
 
-      # ----------------------------------
-      # PLAYWRIGHT TESTS
-      # ----------------------------------
-      - name: Run Playwright tests
-        run: |
-          cd apps/web
-          npx playwright install --with-deps
-          npx playwright test --reporter=html
-        env:
-          E2E_BASE_URL: http://localhost:4173
-
-      # Save Playwright report
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/web/playwright-report
-
-      # ----------------------------------
-      # LIGHTHOUSE
-      # ----------------------------------
-      - name: Lighthouse CI
-        if: always()
-        run: |
-          cd apps/web
-          npx @lhci/cli autorun || true
-
-      # Save build output
-      - name: Upload dist folder
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-dist
-          path: apps/web/dist
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
