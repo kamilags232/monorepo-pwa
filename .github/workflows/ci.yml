@@ -5,16 +5,12 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:  # 👉 permite rodar manualmente
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:24-dind
-        options: --privileged
-        ports:
-          - 2375:2375
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,33 +19,33 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache node modules web
-        uses: actions/cache@v4
-        with:
-          path: apps/web/node_modules
-          key: ${{ runner.os }}-web-${{ hashFiles('apps/web/package-lock.json') }}
-
-      - name: Cache node modules api
-        uses: actions/cache@v4
-        with:
-          path: apps/api/node_modules
-          key: ${{ runner.os }}-api-${{ hashFiles('apps/api/package-lock.json') }}
-
+      # ---------------------------------------
+      # INSTALL DEPENDENCIES
+      # ---------------------------------------
       - name: Install deps (web)
         run: cd apps/web && npm ci
 
       - name: Install deps (api)
         run: cd apps/api && npm ci
 
+      # ---------------------------------------
+      # UNIT TESTS
+      # ---------------------------------------
       - name: Run unit tests (api)
         run: cd apps/api && npm test
 
       - name: Run unit tests (web)
         run: cd apps/web && npm test --if-present
 
+      # ---------------------------------------
+      # BUILD
+      # ---------------------------------------
       - name: Build web
         run: cd apps/web && npm run build
 
+      # ---------------------------------------
+      # DEPLOY TO GITHUB PAGES
+      # ---------------------------------------
       - name: Deploy to Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -57,28 +53,57 @@ jobs:
           publish_dir: ./apps/web/dist
           publish_branch: gh-pages
 
-
-      - name: Build & start docker-compose for E2E
-        run: |
-          docker-compose -f docker-compose.yml up -d --build
-          # wait for services to be healthy (na prática, fazer um wait loop)
-          sleep 5
-
-      - name: Run Playwright tests
+      # ---------------------------------------
+      # START PREVIEW SERVER FOR PLAYWRIGHT
+      # ---------------------------------------
+      - name: Start Preview Server
         run: |
           cd apps/web
-          npx playwright test --reporter=dot
-        env:
-          E2E_BASE_URL: http://localhost:8080
+          npx serve -s dist -l 4173 &
+          echo $! > server.pid
+          sleep 5
 
-      - name: Upload artifacts (web dist)
+      # ---------------------------------------
+      # RUN PLAYWRIGHT TESTS
+      # ---------------------------------------
+      - name: Run Playwright Tests
+        run: |
+          cd apps/web
+          npx playwright install --with-deps
+          npx playwright test --reporter=html
+        env:
+          E2E_BASE_URL: http://localhost:4173
+
+      # ---------------------------------------
+      # STOP SERVER
+      # (IMPEDITO JOB FICAR RODANDO 6 HORAS)
+      # ---------------------------------------
+      - name: Stop Preview Server
+        run: |
+          if [ -f apps/web/server.pid ]; then
+            kill -9 $(cat apps/web/server.pid) || true
+          fi
+
+      # ---------------------------------------
+      # UPLOAD PLAYWRIGHT REPORT
+      # ---------------------------------------
+      - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         with:
-          name: web-dist
-          path: apps/web/dist
+          name: playwright-report
+          path: apps/web/playwright-report
 
-      - name: LHCI (opcional)
+      # ---------------------------------------
+      # LIGHTHOUSE
+      # ---------------------------------------
+      - name: LHCI
         if: always()
         run: |
           cd apps/web
           npx @lhci/cli autorun || true
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist

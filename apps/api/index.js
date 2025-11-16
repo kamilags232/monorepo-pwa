@@ -4,6 +4,10 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("Hello Bootcamp!");
+});
+
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello Bootcamp!" });
 });
@@ -14,3 +18,4 @@ app.listen(PORT, () => {
 });
 
 export default app;
+
