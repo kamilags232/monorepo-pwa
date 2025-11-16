@@ -1,9 +1,4 @@
-# NomeDoProjeto - PWA (Bootcamp II)
-
-## Links
-- PWA (GitHub Pages): https://<org>.github.io/<repo>
-- CI: https://github.com/<org>/<repo>/actions
-- Vídeo: link para vídeo/GIF
+# Focus-Blocker - PWA (Bootcamp II)
 
 ## Arquitetura
 Monorepo contendo:
