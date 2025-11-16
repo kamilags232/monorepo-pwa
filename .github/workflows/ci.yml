@@ -5,68 +5,78 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # 👉 permite rodar manualmente
+  workflow_dispatch:
 
 jobs:
-  build-test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------------
+      # CHECKOUT
+      # ----------------------------------
       - uses: actions/checkout@v4
 
+      # ----------------------------------
+      # NODE SETUP
+      # ----------------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      # ---------------------------------------
+      # ----------------------------------
       # INSTALL DEPENDENCIES
-      # ---------------------------------------
+      # ----------------------------------
       - name: Install deps (web)
         run: cd apps/web && npm ci
 
       - name: Install deps (api)
         run: cd apps/api && npm ci
 
-      # ---------------------------------------
+      # ----------------------------------
       # UNIT TESTS
-      # ---------------------------------------
+      # ----------------------------------
       - name: Run unit tests (api)
         run: cd apps/api && npm test
 
       - name: Run unit tests (web)
         run: cd apps/web && npm test --if-present
 
-      # ---------------------------------------
-      # BUILD
-      # ---------------------------------------
+      # ----------------------------------
+      # BUILD FRONTEND
+      # ----------------------------------
       - name: Build web
         run: cd apps/web && npm run build
 
-      # ---------------------------------------
+      # Disable Jekyll (fix Pages error)
+      - name: Add .nojekyll
+        run: cd apps/web/dist && touch .nojekyll
+
+      # ----------------------------------
       # DEPLOY TO GITHUB PAGES
-      # ---------------------------------------
-      - name: Deploy to Pages
+      # ----------------------------------
+      - name: Deploy to GH Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/web/dist
           publish_branch: gh-pages
 
-      # ---------------------------------------
-      # START PREVIEW SERVER FOR PLAYWRIGHT
-      # ---------------------------------------
+      # ----------------------------------
+      # PREVIEW SERVER FOR PLAYWRIGHT
+      # ----------------------------------
       - name: Start Preview Server
         run: |
           cd apps/web
-          npx serve -s dist -l 4173 &
-          echo $! > server.pid
+          npm install -g serve
+          serve -s dist -l 4173 &
           sleep 5
 
-      # ---------------------------------------
-      # RUN PLAYWRIGHT TESTS
-      # ---------------------------------------
-      - name: Run Playwright Tests
+      # ----------------------------------
+      # PLAYWRIGHT TESTS
+      # ----------------------------------
+      - name: Run Playwright tests
         run: |
           cd apps/web
           npx playwright install --with-deps
@@ -74,35 +84,24 @@ jobs:
         env:
           E2E_BASE_URL: http://localhost:4173
 
-      # ---------------------------------------
-      # STOP SERVER
-      # (IMPEDITO JOB FICAR RODANDO 6 HORAS)
-      # ---------------------------------------
-      - name: Stop Preview Server
-        run: |
-          if [ -f apps/web/server.pid ]; then
-            kill -9 $(cat apps/web/server.pid) || true
-          fi
-
-      # ---------------------------------------
-      # UPLOAD PLAYWRIGHT REPORT
-      # ---------------------------------------
-      - name: Upload Playwright Report
+      # Save Playwright report
+      - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/web/playwright-report
 
-      # ---------------------------------------
+      # ----------------------------------
       # LIGHTHOUSE
-      # ---------------------------------------
-      - name: LHCI
+      # ----------------------------------
+      - name: Lighthouse CI
         if: always()
         run: |
           cd apps/web
           npx @lhci/cli autorun || true
 
-      - name: Upload dist
+      # Save build output
+      - name: Upload dist folder
         uses: actions/upload-artifact@v4
         with:
           name: web-dist
