@@ -1,18 +1,20 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  base: "/monorepo-pwa/", // 👈 OBRIGATÓRIO PARA GITHUB PAGES
+
   server: {
-    // Obrigatório para o service worker conseguir controlar a raiz "/"
     headers: {
       "Service-Worker-Allowed": "/"
     }
   },
 
   build: {
-    // Garante que o manifest seja gerado corretamente no build
-    manifest: true
+    manifest: true,
   },
 
-  // Serve arquivos da pasta public/ corretamente
   publicDir: "public",
+
+  plugins: [react()],
 });
